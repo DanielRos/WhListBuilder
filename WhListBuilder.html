@@ -1,0 +1,1482 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script
+  src="https://code.jquery.com/jquery-3.6.3.min.js"
+  integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU="
+  crossorigin="anonymous"></script>
+</head>
+<style type="text/css">
+
+.draggable-table {
+  -webkit-box-shadow: 0px 0px 10px 8px rgba(0, 0, 0, 0.1);
+          box-shadow: 0px 0px 10px 8px rgba(0, 0, 0, 0.1);   
+  .draggable-table__drag {
+      font-size: .95em;
+      font-weight: lighter;
+      text-transform: capitalize;    
+      position: absolute;
+      width: 100%;
+      text-indent: 50px;    
+      border: 1px solid #f1f1f1;
+      z-index: 10;
+      -webkit-box-shadow: 2px 2px 3px 0px rgba(0, 0, 0, 0.05);
+              box-shadow: 2px 2px 3px 0px rgba(0, 0, 0, 0.05); 
+    
+      opacity: 1;
+  }
+  
+  tbody {    
+    tr {      
+      td {
+        font-size: .95em;
+        font-weight: lighter;
+        text-transform: capitalize;
+        text-indent: 50px;
+        padding: 10px;  
+        border-color:black;
+        border-style:solid;
+        border-width:1px;
+        font-family:Arial, sans-serif;
+        overflow:hidden;
+        word-break:normal;
+        cursor:grabbing
+      }
+    }      
+  }
+}
+    
+    textarea.notes {width:95%; height:15px;}
+    tr.is-dragging {background: #f1c40f !important;
+}  
+body {font-family: Arial, sans-serif; font-size:10px;}
+
+label {display: inline-block; width:125px; font-size:18px;}
+form {margin:10px}
+select {width:25%; height:35px; border: solid; border-width: thin;}
+button {width: 10%; height:35px;margin-left:5px;}
+input {height:32px; border: solid; border-width: thin;}
+div {margin-top:10px;margin-bottom:10px;}
+.savedListLabel{padding-left:10px;margin-right:5px;}
+#listname {width:49%;}
+.deleteButton {background-color:red; height:20px;}
+.tg  {border-collapse:collapse;border-spacing:0;margin:0px auto;}
+.tg th{border-color:#b9b9b9;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:bold;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-0lax{text-align:left;vertical-align:top;border-color:#b9b9b9;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:4px 5px;word-break:normal; cursor:grabbing;text-align: center; vertical-align: middle; pointer-events: auto !important;}
+.tg-wrap {margin-top:15px;}
+
+tr:nth-child(even) {
+        background-color: #f7f0f7b8;
+    }
+
+tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+@media only screen and (min-width: 768px) and (orientation: landscape) {
+    .deleteButton {height:15px;}
+    body{font-size:14px;}
+    select {width:20%; height:auto;}
+    button {width: auto; height:auto;}
+    input {height:20px;}
+    textarea.notes {width:95%; height:15px;}
+    #listname {width:auto;}
+}
+
+</style>
+<body>
+
+<h2>List Builder</h2>
+
+<form>
+    <label for="army">Army:</label>
+
+    <select name="army" id="army" onChange="loadArmyOptions(); $('#listname').val('')">
+        <option>No army selected</option>
+        <option onSelect="loadArmyOptions('Skaven')" value="Skaven">Skaven</option>
+        <option onSelect="loadArmyOptions('Dwarfs')" value="Dwarfs">Dwarfs</option>
+        <option onSelect="loadArmyOptions('Bretonnia')" value="Bretonnia">Bretonnia</option>
+        <option onSelect="loadArmyOptions('Vampire Counts')" value="Vampire Counts">Vampire Counts</option>
+        <option onSelect="loadArmyOptions('Tomb Kings')" value="Tomb Kings">Tomb Kings</option>
+        <option onSelect="loadArmyOptions('Orcs & Goblins')" value="Orcs & Goblins">Orcs & Goblins</option>
+        <option onSelect="loadArmyOptions('Empire')" value="Empire">Empire</option>
+        <option onSelect="loadArmyOptions('Lizardmen')" value="Lizardmen">Lizardmen</option>
+        <option onSelect="loadArmyOptions('Dark Elves')" value="Dark Elves">Dark Elves</option>
+        <option onSelect="loadArmyOptions('High Elves')" value="High Elves">High Elves</option>
+        <option onSelect="loadArmyOptions('Wood Elves')" value="Wood Elves">Wood Elves</option>
+        <option onSelect="loadArmyOptions('Hordes of Chaos')" value="Hordes of Chaos">Hordes of Chaos</option>
+        <option onSelect="loadArmyOptions('Beastmen')" value="Beastmen">Beastmen</option>
+        <option onSelect="loadArmyOptions('Ogres')" value="Ogres">Ogres</option>
+    </select>
+
+<div> 
+    <label for="listname">List name: </label>
+    <input type="text" id="listname">
+    <button type="button" onClick="saveList()">Save List</button>
+</div>
+</form>
+
+<div id="armyForm">
+    
+</div>
+
+<div id="redips-drag" class="tg-wrap">
+    <table id="tg-f2S7H" class="tg draggable-table">
+    <thead>
+      <tr>
+        <th width="20%">Unit</th>
+        <th>Category</th>
+        <th>Amount</th>
+        <th>Points</th>
+        <th with="40px">PPM</th>
+        <th with="40px">PPU</th>
+        <th width="50%">Notes</th>
+        <th>Total</th>
+        <th>Delete</th>
+      </tr>
+    </thead>
+    <tbody id="units">
+    </tbody>
+    </table>
+</div>
+
+<h2>Total <span id="listcost">0</span> pts</h2>
+    <div>
+        <p><span class="label2"><span id="charCount">0</span> Characters:</span> <span id="charPts">0</span> pts</p>
+        <p><span class="label2"><span id="coreCount">0</span> Core: </span> <span id="corePts">0</span> pts</p>
+        <p><span class="label2"><span id="specialCount">0</span> Special:</span> <span id="specialPts">0</span> pts</p>
+        <p><span class="label2"><span id="rareCount">0</span> Rare: </span> <span id="rarePts">0</span> pts</p>
+        <p><span class="label2">Models:</span> <span id="modelCount">0</span></p>
+    </div>
+
+<ul id="list"></ul>
+<script charset="utf-8">
+    
+
+    function calcualteTotal() {
+        let total = 0
+        let models = 0
+        let charCounter = 0;
+        let coreCounter = 0;
+        let specialCounter = 0;
+        let rareCounter = 0;
+        let charCost = 0;
+        let coreCost = 0;
+        let specialCost = 0;
+        let rareCost = 0;
+        var table = document.getElementById("tg-f2S7H");
+        for (var i = 1; i < table.rows.length; i++) {
+            let rowTotal = parseInt(table.rows[i].cells[7].innerHTML);
+            total += rowTotal
+            models += parseInt(table.rows[i].cells[2].querySelector("input").value)
+            let category = table.rows[i].cells[1].innerHTML
+            if(category.includes("Lord")) {
+                charCounter++
+                charCost += rowTotal;
+            }
+            if(category.includes("Hero")) {
+                charCounter++
+                charCost += rowTotal;
+            }
+            if(category.includes("Core")) {
+                coreCounter++ 
+                coreCost += rowTotal;
+            }
+            if(category.includes("Special")) {
+                specialCounter++
+                specialCost += rowTotal;
+            }
+            if(category.includes("Rare")) {
+                rareCounter++ 
+                rareCost += rowTotal;
+            }
+            
+        }
+
+        document.getElementById("modelCount").innerHTML = models;
+        document.getElementById("charPts").innerHTML = charCost;
+        document.getElementById("corePts").innerHTML = coreCost;
+        document.getElementById("specialPts").innerHTML = specialCost;
+        document.getElementById("rarePts").innerHTML = rareCost;
+        document.getElementById("charCount").innerHTML = charCounter;
+        document.getElementById("coreCount").innerHTML = coreCounter;
+        document.getElementById("specialCount").innerHTML = specialCounter;
+        document.getElementById("rareCount").innerHTML = rareCounter;
+        
+        document.getElementById("listcost").innerHTML = total;
+        updateList()
+    }
+
+    function updateList() {
+        $('#list').html("")
+        $("table#tg-f2S7H > tbody > tr").each(function() {
+            let listObject = $('<li>')
+            let text = $(this).find('td:eq(2)').find('input').val() + "x " + $(this).find('td:eq(0)').text() + " - " + $(this).find('td:eq(7)').text()
+            let notes = $(this).find('td:eq(6) > textarea').val()
+            if(notes != "" && notes != undefined) {
+                text=text + " (" + notes + ")"
+            }
+            $('#list').append(listObject.text(text))
+            loadSavedListsSelect()
+        });
+    }
+
+    function calculateRowTotal(rowId) {
+        let base = parseInt($(rowId).find('td:eq(3)').html())
+        let amount = parseInt($(rowId).find('td:eq(2)').find('input').val())
+        let ppm = parseInt($(rowId).find('td:eq(4)').find('input').val())
+        let ppu = parseInt($(rowId).find('td:eq(5)').find('input').val())
+        let total = ((base + ppm) * amount) + ppu
+        $(rowId).find('td:eq(7)').text(total)
+        calcualteTotal()
+    }
+
+    function addUnit(selection) {       
+        let name = $(selection + ' option:selected').text()
+        let category = $(selection + ' option:selected').data("category")
+        let amount = $(selection + ' option:selected').data("min")
+        let basePrice = $(selection + ' option:selected').val()
+        addTableRow(name, category, amount, basePrice, 0, 0, "")
+    }
+
+    function addTableRow(name, category, amount, basePrice, ppm, ppu, notes) {
+        let uuid = generateUUID()
+        $("#units").append($('<tr>').attr('id', uuid)
+                .append($('<td class="tg-0lax" class="nametd">').append(name))
+                .append($('<td class="tg-0lax">').append(category))
+            .append($('<td class="tg-0lax">').append('<input type="number" value="' + amount + '" style="width: 40px;" onChange="calculateRowTotal(\'#' + uuid + '\')">'))
+            .append($('<td class="tg-0lax">').append(basePrice))
+            .append($('<td class="tg-0lax">').append('<input type="number" value="'+ ppm +'" style="width: 40px;" onChange="calculateRowTotal(\'#' + uuid+ '\')"/>'))
+            .append($('<td class="tg-0lax">').append('<input type="number" value="'+ ppu +'" style="width: 40px;" onChange="calculateRowTotal(\'#' + uuid+ '\')"/>'))
+            .append($('<td class="tg-0lax">').append($('<textarea class="notes"/>').val(notes)))
+            .append($('<td class="tg-0lax">').append(0))
+            .append($('<td class="tg-0lax">').append('<button class="deleteButton" type="button" onClick="$(\'#' + uuid +'\').remove();calcualteTotal();"/>'))
+        )
+        calculateRowTotal('#' + uuid)   
+    }
+
+    function saveList() {
+      let table = document.getElementById("tg-f2S7H");
+      let data = [];
+      for (let i = 1, row; row = table.rows[i]; i++) {
+        let rowData = {};
+        rowData["Unit"] = row.cells[0].innerHTML;
+        rowData["Category"] = row.cells[1].innerHTML;
+        rowData["Amount"] = row.cells[2].querySelector("input").value;
+        rowData["BasePrice"] = row.cells[3].innerHTML;
+        rowData["PPM"] = row.cells[4].querySelector("input").value;
+        rowData["PPU"] = row.cells[5].querySelector("input").value;
+        rowData["Notes"] = row.cells[6].querySelector("textarea").value;
+        rowData["Total"] = row.cells[7].innerHTML;
+        data.push(rowData);
+      }
+
+      let listname = $('#listname').val()
+      if(listname === '') {
+        alert("List name required to save")
+      }else {
+        localStorage.setItem($('#army').val() + listname, JSON.stringify(data));
+      }
+      loadSavedListsSelect()
+    }
+
+    function loadSavedListsSelect() {
+        let armyName = $('#army').val(); 
+        $('#savedLists').html('');
+        $('#savedLists').append($('<label class="savedListLabel" for="lists">').text(" Saved lists:"));
+        $('#savedLists').append($('<select name="lists" onChange="loadList()">'))
+        let savedListSelect = $('#savedLists > select')
+        savedListSelect.append($('<option>').text('Load saved list'))
+        for (var i = 0; i < localStorage.length; i++) {
+            if(localStorage.key(i).startsWith(armyName) && localStorage.key(i) !== armyName) {
+                let listKey = localStorage.key(i)
+                let listName = listKey.replace(new RegExp("^" + armyName), "");
+                option = $('<option>').text(listName).val(listKey)
+                if($('#listname').val() == listName) {
+                    option.attr('selected', "selected")
+                }
+                $(savedListSelect).append(option)            
+            }
+        }
+         $('#savedLists').append($('<button type="button" onClick="removeSavedList()">').text("Delete List"))
+    }
+
+    function removeSavedList() {
+        let listToRemove = $('#savedLists > select option:selected').val();
+        localStorage.removeItem(listToRemove);
+        loadSavedListsSelect()
+    }
+
+    function loadList() {
+        $("#units").html('');
+        let listKey = $('#savedLists > select option:selected').val();
+        var data = JSON.parse(localStorage.getItem(listKey));
+
+        if(data !== null){
+        $('#listname').val($('#savedLists > select option:selected').text())
+        for (var i=0; i<data.length; i++) {
+            let row = data[i];
+            addTableRow(row.Unit, row.Category, row.Amount, row.BasePrice, row.PPM, row.PPU, row.Notes)
+        }               
+        }else {
+            $('#listname').val("")
+        }
+    }
+
+    function generateUUID() {
+        var d = new Date().getTime();//Timestamp
+        var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now()*1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16;//random number between 0 and 16
+            if(d > 0){//Use timestamp until depleted
+                r = (d + r)%16 | 0;
+                d = Math.floor(d/16);
+            } else {//Use microseconds since page-load if supported
+                r = (d2 + r)%16 | 0;
+                d2 = Math.floor(d2/16);
+            }
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    }
+</script>
+<script  charset="utf-8">
+    skavenForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">
+          <option value=560 data-category="Lord+Hero" data-min=1>Grey Seer Thanqoul</option>
+          <option value=285 data-category="Lord+Hero" data-min=1>Throt the Unclean</option>
+          <option value=90 data-category="Lord" data-min=1>Warlord</option>
+          <option value=235 data-category="Lord" data-min=1>Grey Seer</option>
+          <option value=45 data-category="Hero" data-min=1>Chieftain</option>
+          <option value=70 data-category="Hero" data-min=1>Plague Priest</option>
+          <option value=65 data-category="Hero" data-min=1>Master Moulder</option>
+          <option value=45 data-category="Hero" data-min=1>Warlock Engineer</option>
+          <option value=105 data-category="Hero" data-min=1>Assassin</option>
+          <option value=215 data-category="Lord" data-min=1>Master Assassin</option>
+          <option value=180 data-category="Lord" data-min=1>Warlock Master</option>
+          <option value=130 data-category="Lord" data-min=1>Plague Lord</option>
+          <option value=130 data-category="Lord" data-min=1>Master Mutator</option>
+          <option value=75 data-category="Hero" data-min=1>Eshin Sorcerer</option>
+          <option value=60 data-category="Hero" data-min=1>Festering Chantor</option>
+          <option value=65 data-category="Hero" data-min=1>Harbringer of Mutation</option>          
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=5 data-category="Core" data-min=20>Clanrats</option>
+          <option value=2 data-category="Core" data-min=20>Clanrat Slaves</option>
+          <option value=30 data-category="Core" data-min=1 data-models=7>Giant Rats</option>
+          <option value=8 data-category="Core" data-min=10>Stormvermin</option>
+          <option value=5 data-category="Core" data-min=5>Night Runners</option>
+          <option value=45 data-category="Core" data-min=1>Rat Swarm</option>
+          <option value=10 data-category="Core" data-min=2>Poisoned Wind Globadiers</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">
+          <option value=12 data-category="Special" data-min=5>Gutter Runners</option>
+          <option value=20 data-category="Special" data-min=3>Warplock Jezzails</option>
+          <option value=6 data-category="Special" data-min=10>Plague Monks</option>
+          <option value=50 data-category="Special" data-min=1>Rat Ogres</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=17 data-category="Rare" data-min=5>Plague Censer Bearers</option>
+          <option value=100 data-category="Rare" data-min=1>Warp-Lightning Cannon</option>
+          <option value=150 data-category="Rare" data-min=1>Doomwheel</option>
+          <option value=0 data-category="Rare" data-min=1>Dogs of War</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    dwarfForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">
+          <option value=145 data-category="Lord" data-min=1>Dwarf Lord</option>
+          <option value=140 data-category="Lord" data-min=1>Runelord</option>
+          <option value=315 data-category="Lord" data-min=1>Runelord with Anvil of Doom</option>
+          <option value=110 data-category="Lord" data-min=1>Daemon Slayer</option>
+          <option value=65 data-category="Hero" data-min=1>Thane</option>
+          <option value=70 data-category="Hero" data-min=1>Runesmith</option>
+          <option value=70 data-category="Hero" data-min=1>Master Engineer</option>
+          <option value=50 data-category="Hero" data-min=1>Dragon Slayer</option>
+          <option value=780 data-category="Lord+Hero" data-min=1>Thorgrim Grudgebearer</option>
+          <option value=505 data-category="Lord+Hero" data-min=1>Thorek Ironbrow</option>
+          
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=8 data-category="Core" data-min=10>Dwarf Warriors</option>
+          <option value=11 data-category="Core" data-min=10>Longbeards</option>
+          <option value=11 data-category="Core" data-min=10>Quarrellers</option>
+          <option value=14 data-category="Core" data-min=10>Thunderers</option>
+          <option value=11 data-category="Core" data-min=10>Dwarf Warrior Rangers</option>
+          <option value=14 data-category="Core" data-min=10>Dwarf Quarreler Rangers</option>
+          <option value=15 data-category="Core" data-min=10>Dwarf Longbeard Rangers</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">
+          <option value=12 data-category="Special" data-min=5>Hammerers</option>
+          <option value=11 data-category="Special" data-min=5>Miners</option>
+          <option value=11 data-category="Special" data-min=5>Slayers</option>
+          <option value=26 data-category="Attachment" data-min=5>Giant Slayers</option>
+          <option value=13 data-category="Special" data-min=5>Ironbreakers</option>
+          <option value=90 data-category="Special" data-min=1>Cannon</option>
+          <option value=80 data-category="Special" data-min=1>Grudge Thrower</option>
+          <option value=45 data-category="Special" data-min=1>Bolt Thrower</option>          
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=120 data-category="Rare" data-min=1>Organ Gun</option>
+          <option value=140 data-category="Rare" data-min=1>Flame Cannon</option>
+          <option value=140 data-category="Rare" data-min=1>Gyrocopter</option>
+          <option value=130 data-category="Rare+Hero" data-min=1>Goblin Hewer</option>
+          <option value=0 data-category="Rare" data-min=1>Dogs of War</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    lizardForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">
+          <option value=325 data-category="Lord" data-min=1>Slann Mage-Priest</option>
+          <option value=145 data-category="Lord" data-min=1>Saurus Oldblood</option>
+          <option value=85 data-category="Hero" data-min=1>Saurus Scar-Veteran</option>
+          <option value=55 data-category="Hero" data-min=1>Skink Chief</option>
+          <option value=65 data-category="Hero" data-min=1>Skink Priest</option>
+          
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=12 data-category="Core" data-min=10>Saurus Warriors</option>
+          <option value=6 data-category="Core" data-min=10>Skink Skirmishers</option>
+          <option value=60 data-category="Core" data-min=1>Jungle Swarm</option>
+          <option value=17 data-category="Core" data-min=10>Temple Guard</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">
+          <option value=35 data-category="Special" data-min=5>Saurus Cavalry</option>
+          <option value=58 data-category="Special" data-min=3>Kroxigor</option>
+          <option value=15 data-category="Special" data-min=3>Chameleon Skinks</option>
+          <option value=35 data-category="Special" data-min=3>Terradons</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=235 data-category="Rare" data-min=1>Stegadon</option>
+          <option value=65 data-category="Rare" data-min=1>Salamander Hunting Packs</option>
+          <option value=0 data-category="Rare" data-min=1>Dogs of War</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    ogresForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">
+          <option value=200 data-category="Lord" data-min=1>Tyrant</option>
+          <option value=200 data-category="Lord" data-min=1>Slaugthermaster</option>
+          <option value=130 data-category="Hero" data-min=1>Bruiser</option>
+          <option value=130 data-category="Hero" data-min=1>Butcher</option>
+          <option value=145 data-category="Hero" data-min=1>Hunter</option>
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=35 data-category="Core" data-min=3>Bulls</option>
+          <option value=48 data-category="Core" data-min=3>Ironguts</option>
+          <option value=2 data-category="Core" data-min=20>Gnoblar Fighters</option>
+          <option value=6 data-category="Core" data-min=8>Gnoblar Trappers</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">
+          <option value=55 data-category="Special" data-min=2>Leadbelchers</option>
+          <option value=65 data-category="Special" data-min=3>Yhetees</option>
+          <option value=165 data-category="Special" data-min=1>Gnoblar Scraplauncher</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=80 data-category="Rare" data-min=1>Maneaters</option>
+          <option value=175 data-category="Rare" data-min=1>Slavegiant</option>
+          <option value=75 data-category="Rare" data-min=1>Gorger</option>
+          <option value=100 data-category="Rare + Special" data-min=1>Rhinox Calvary</option>
+          <option value=145 data-category="Rare + Special" data-min=1>Bull Rhinox Calvary</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    bretonniaForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">
+          <option value=110 data-category="Lord" data-min=1>Bretonnian Lord</option>
+          <option value=190 data-category="Lord" data-min=1>Prophetess of the Lady</option>
+          <option value=275 data-category="Lord" data-min=1>Green Knight</option>
+          <option value=545 data-category="Lord+Hero" data-min=1>Fay Enchantress</option>
+          <option value=728 data-category="Lord+Hero" data-min=1>Louen Leoncoeur</option>
+          <option value=60 data-category="Hero" data-min=1>Paladin</option>
+          <option value=70 data-category="Hero" data-min=1>Damsel of the Lady</option>          
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=20 data-category="Core" data-min=5>Knights Errant</option>
+          <option value=24 data-category="Core" data-min=5>Knights of the Realm</option>
+          <option value=5 data-category="Core" data-min=10>Men-at-arms</option>
+          <option value=6 data-category="Core" data-min=6>Peasant Bowmen</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">
+          <option value=28 data-category="Special" data-min=5>Questing Knights</option>
+          <option value=55 data-category="Special" data-min=3>Pegasus Knights</option>
+          <option value=15 data-category="Special" data-min=5>Mounted Yeomen</option>
+          <option value=118 data-category="Special" data-min=1>Grail Reliquae with Battle Pilgrims</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=38 data-category="Rare" data-min=3>Grail Knights</option>
+          <option value=90 data-category="Rare" data-min=1>Field Trebuchet</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    vcForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">
+          <option value=285 data-category="Lord+Hero" data-min=1>Vampire Lord</option>
+          <option value=205 data-category="Lord" data-min=1>Vampire Count</option>
+          <option value=185 data-category="Lord" data-min=1>Master Necromancer</option>
+          <option value=690 data-category="Lord + 2x Hero" data-min=1>Manfred Von Carstein</option>
+          <option value=1015 data-category="Lord + 3x Hero" data-min=1>Zacharias the Everliving</option>
+          <option value=80 data-category="Hero" data-min=1>Vampire Thrall</option>
+          <option value=65 data-category="Hero" data-min=1>Necromancer</option>
+          <option value=60 data-category="Hero" data-min=1>Wight Lord</option>
+          <option value=90 data-category="Hero" data-min=1>Wraith</option>
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=8 data-category="Core" data-min=10>Skeletons</option>
+          <option value=6 data-category="Core" data-min=10>Zombies</option>
+          <option value=8 data-category="Core" data-min=5>Ghouls</option>
+          <option value=60 data-category="Core" data-min=1>Bat Swarm</option>
+          <option value=10 data-category="Core" data-min=5>Dire Wolves</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">
+          <option value=12 data-category="Special" data-min=10>Grave Guard</option>
+          <option value=23 data-category="Special" data-min=5>Black Knights</option>
+          <option value=20 data-category="Special" data-min=3>Fell Bats</option>
+          <option value=65 data-category="Special" data-min=1>Spirit Host</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=90 data-category="Rare" data-min=1>Banshee</option>
+          <option value=200 data-category="Rare" data-min=1>Black Coach</option>
+          <option value=0 data-category="Rare" data-min=1>Dogs of War</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    tombKingForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">          
+          <option value=170 data-category="Lord" data-min=1>Tomb King</option>
+          <option value=245 data-category="Lord" data-min=1>Liche High Priest</option>
+          <option value=410 data-category="Lord + Rare" data-min=1>Liche High Priest with Casket</option>
+          <option value=100 data-category="Hero" data-min=1>Tomb Prince</option>
+          <option value=65 data-category="Hero" data-min=1>Icon Bearer</option>
+          <option value=115 data-category="Hero" data-min=1>Liche Priest</option>
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=8 data-category="Core" data-min=10>Skeleton Warriors</option>
+          <option value=14 data-category="Core" data-min=5>Skeleton Light Horsemen</option>
+          <option value=45 data-category="Core" data-min=1>Tomb Swarm</option>
+          <option value=16 data-category="Core" data-min=5>Skeleton Heavy Horsemen</option>
+          <option value=40 data-category="Core" data-min=3>Chariots</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">
+          <option value=12 data-category="Special" data-min=10>Tomb Guard</option>
+          <option value=65 data-category="Special" data-min=3>Ushabti</option>
+          <option value=40 data-category="Special" data-min=3>Chariots</option>
+          <option value=24 data-category="Special" data-min=3>Carrion</option>
+          <option value=85 data-category="Special" data-min=1>Tomb Scorpion</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=90 data-category="Rare" data-min=1>Screaming Skull Catapult</option>
+          <option value=220 data-category="Rare" data-min=1>Bone Giant</option>
+          <option value=0 data-category="Rare" data-min=1>Dogs of War</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    ogForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">
+          <option value=600 data-category="Lord+Hero+Special" data-min=1>Grimgor</option>
+          <option value=500 data-category="Lord+Hero" data-min=1>Wurrzag</option>
+          <option value=135 data-category="Lord+Hero" data-min=1>Black Orc Warboss</option>
+          <option value=125 data-category="Lord" data-min=1>Savage Orc Warboss</option>
+          <option value=110 data-category="Lord" data-min=1>Orc Warboss</option>          
+          <option value=180 data-category="Lord" data-min=1>Orc Great Shaman</option>
+          <option value=190 data-category="Lord" data-min=1>Savage Orc Great Shaman</option>
+          <option value=65 data-category="Lord" data-min=1>Goblin Warboss</option>
+          <option value=55 data-category="Lord" data-min=1>Night Goblin Warboss</option>
+          <option value=155 data-category="Lord" data-min=1>Goblin Great Shaman</option>
+          <option value=160 data-category="Lord" data-min=1>Night Goblin Great Shaman</option>
+          <option value=80 data-category="Hero x2" data-min=1>Black Orc Big Boss</option>
+          <option value=75 data-category="Hero" data-min=1>Savage Orc Big Boss</option>
+          <option value=65 data-category="Hero" data-min=1>Orc Big Boss</option>
+          <option value=65 data-category="Hero" data-min=1>Orc Shaman</option>
+          <option value=67 data-category="Hero" data-min=1>Savage Orc Shaman</option>
+          <option value=35 data-category="Hero" data-min=1>Goblin Big Boss</option>
+          <option value=30 data-category="Hero" data-min=1>Night Goblin Big Boss</option>
+          <option value=55 data-category="Hero" data-min=1>Goblin Shaman</option>
+          <option value=60 data-category="Hero" data-min=1>Night Goblin Shaman</option>
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=5 data-category="Core" data-min=10>Orc Boyz</option>
+          <option value=7 data-category="Core" data-min=10>Orc Arrer Boyz</option>
+          <option value=6 data-category="Core" data-min=10>Savage Orc Boyz</option>
+          <option value=2 data-category="Core" data-min=20>Goblins</option>
+          <option value=10 data-category="Core" data-min=5>Goblin Wolf Riders</option>
+          <option value=2 data-category="Core" data-min=20>Night Goblins</option>
+          <option value=25 data-category="Core" data-min=1>Snotling Swarm</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">
+          <option value=10 data-category="Special" data-min=10>Black Orcs</option>
+          <option value=18 data-category="Special" data-min=5>Orc Boar Boyz</option>
+          <option value=17 data-category="Special" data-min=5>Savage Orc Boar Boyz</option>
+          <option value=0 data-category="Special" data-min=1>Night Goblin Squig Herd</option>
+          <option value=80 data-category="Special" data-min=1>Orc Boar Chariot</option>
+          <option value=60 data-category="Special" data-min=1>Goblin Wolf Chariot</option>
+          <option value=70 data-category="Special" data-min=1>Goblin Rock Lobber</option>
+          <option value=35 data-category="Special" data-min=1>Goblin Spear Chukka</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=50 data-category="Rare" data-min=3>Trolls</option>
+          <option value=80 data-category="Rare" data-min=1>Goblin Doom Diver Catapult</option>
+          <option value=40 data-category="Rare" data-min=1>Snotling Pump Wagon</option>
+          <option value=205 data-category="Rare" data-min=1>Giant</option>
+          <option value=0 data-category="Rare" data-min=1>Dogs of War</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    empireForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">
+          <option value=450 data-category="Lord+Hero" data-min=1>Balthasar Gelt</option>
+          <option value=300 data-category="Lord+Hero" data-min=1>Luthor Huss</option>
+          <option value=80 data-category="Lord" data-min=1>Elector Count</option>
+          <option value=160 data-category="Lord" data-min=1>Templar Grand Master</option>
+          <option value=175 data-category="Lord" data-min=1>Wizard Lord</option>          
+          <option value=50 data-category="Hero" data-min=1>Captain</option>
+          <option value=95 data-category="Hero" data-min=1>Warrior Priest</option>
+          <option value=55 data-category="Hero" data-min=1>Master Engineer</option>
+          <option value=60 data-category="Hero" data-min=1>Battle Wizard</option>
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=6 data-category="Core" data-min=10>Halberdiers</option>
+          <option value=6 data-category="Core" data-min=10>Spearmen</option>
+          <option value=7 data-category="Core" data-min=10>Swordsmen</option>
+          <option value=8 data-category="Core" data-min=10>Handgunners</option>
+          <option value=5 data-category="Core" data-min=10>Free Companies</option>
+          <option value=8 data-category="Core" data-min=10>Archers</option>
+          <option value=10 data-category="Core" data-min=5>Huntsmen</option>
+          <option value=8 data-category="Core" data-min=10>Crossbowmen</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">
+          <option value=23 data-category="Special" data-min=5>Knightly Orders</option>
+          <option value=26 data-category="Special" data-min=5>Knights of the Inner Circle</option>
+          <option value=25 data-category="Special" data-min=5>Knights of the White Wolf</option>
+          <option value=12 data-category="Special" data-min=10>Greatswords</option>
+          <option value=19 data-category="Special" data-min=5>Pistoliers</option>
+          <option value=100 data-category="Special" data-min=1>Great Cannon</option>
+          <option value=75 data-category="Special" data-min=1>Mortar</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=125 data-category="Rare" data-min=1>Hellblaster Volley Gun</option>
+          <option value=11 data-category="Rare" data-min=5>Flagellants</option>
+          <option value=0 data-category="Rare" data-min=1>Dogs of War</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    darkElfForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">          
+          <option value=125 data-category="Lord" data-min=1>Dark Elf Highborn</option>
+          <option value=445 data-category="Lord+Hero" data-min=1>Dark Elf Highborn on Black Dragon</option>
+          <option value=215 data-category="Lord" data-min=1>High Sorceress</option>
+          <option value=70 data-category="Hero" data-min=1>Dark Elf Noble</option>
+          <option value=90 data-category="Hero" data-min=1>Sorceress</option>
+          <option value=40 data-category="Hero" data-min=1>Beastmaster</option>
+          <option value=125 data-category="Hero" data-min=1>Assassin</option>
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=9 data-category="Core" data-min=10>Dark Elf Warriors</option>
+          <option value=10 data-category="Core" data-min=10>Corsairs</option>
+          <option value=18 data-category="Core" data-min=5>Dark Riders</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">
+          <option value=14 data-category="Special" data-min=5>Shades</option>
+          <option value=13 data-category="Special" data-min=10>Witch Elves</option>
+          <option value=95 data-category="Special" data-min=1>Cold One Chariot</option>
+          <option value=29 data-category="Special" data-min=5>Cold One Knights</option>
+          <option value=11 data-category="Special" data-min=10>Executioners</option>
+          <option value=13 data-category="Special" data-min=5>Harpies</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=220 data-category="Rare" data-min=1>War Hydra</option>
+          <option value=16 data-category="Rare" data-min=10>Black Guard</option>
+          <option value=0 data-category="Rare" data-min=1>Dogs of War</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    chaosForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">          
+          <option value=210 data-category="Lord" data-min=1>Lord of Chaos</option>
+          <option value=235 data-category="Lord" data-min=1>Exalted Sorcerer of Chaos</option>
+          <option value=300 data-category="Lord+Hero" data-min=1>Daemon Prince</option>
+          <option value=650 data-category="Lord+Hero+Rare" data-min=1>Bloodthirster</option>
+          <option value=625 data-category="Lord+Hero+Rare" data-min=1>Keeper of Secrets</option>
+          <option value=665 data-category="Lord+Hero+Rare" data-min=1>Lord of Change</option>
+          <option value=600 data-category="Lord+Hero+Rare" data-min=1>Great Unclean One</option>
+          <option value=100 data-category="Hero" data-min=1>Exalted Champion of Chaos</option>
+          <option value=230 data-category="Hero x2" data-min=1>Exalted Daemon</option>
+          <option value=80 data-category="Hero" data-min=1>Aspiring Champion of Chaos</option>
+          <option value=85 data-category="Hero" data-min=1>Sorcerer of Chaos</option>
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=14 data-category="Core (Mortal)" data-min=10>Warriors of Chaos</option>
+          <option value=20 data-category="Core (Mortal)" data-min=10>Chosen Warriors of Chaos</option>
+          <option value=5 data-category="Core (Mortal)" data-min=10>Marauders of Chaos</option>
+          <option value=13 data-category="Core (Mortal)" data-min=5>Marauder Horsemen</option>
+          <option value=33 data-category="Core (Mortal)" data-min=4>Knights of Chaos</option>
+          <option value=45 data-category="Core (Mortal)" data-min=4>Chosen Knights of Chaos</option>
+          <option value=120 data-category="Core (Mortal)" data-min=1>Chariot of Chaos</option>
+          <option value=6 data-category="Core (Mortal)" data-min=5>Warhounds of Chaos</option>
+          <option value=16 data-category="Core (Daemon)" data-min=10>Bloodletters</option>
+          <option value=16 data-category="Core (Daemon)" data-min=5>Flesh Hounds of Khorne</option>
+          <option value=16 data-category="Core (Daemon)" data-min=10>Plaguebearers</option>
+          <option value=16 data-category="Core (Daemon)" data-min=1>Nurglings</option>
+          <option value=15 data-category="Core (Daemon)" data-min=10>Daemonettes</option>
+          <option value=15 data-category="Core (Daemon)" data-min=10>Horrors</option>
+          <option value=33 data-category="Core (Daemon)" data-min=3>Screamers of Tzeentch</option>
+          <option value=15 data-category="Core (Daemon)" data-min=10>Chaos Furies</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">                              
+          <option value=16 data-category="Special (Mortal)" data-min=10>Bloodletters</option>
+          <option value=16 data-category="Special (Mortal)" data-min=5>Flesh Hounds of Khorne</option>
+          <option value=16 data-category="Special (Mortal)" data-min=10>Plaguebearers</option>
+          <option value=16 data-category="Special (Mortal)" data-min=1>Nurglings</option>
+          <option value=15 data-category="Special (Mortal)" data-min=10>Daemonettes</option>
+          <option value=15 data-category="Special (Mortal)" data-min=10>Horrors</option>
+          <option value=33 data-category="Special (Mortal)" data-min=3>Screamers of Tzeentch</option>
+          <option value=15 data-category="Special (Mortal)" data-min=10>Chaos Furies</option>
+          <option value=14 data-category="Special (Daemon)" data-min=10>Warriors of Chaos</option>
+          <option value=20 data-category="Special (Daemon)" data-min=10>Chosen Warriors of Chaos</option>
+          <option value=5 data-category="Special (Daemon)" data-min=10>Marauders of Chaos</option>
+          <option value=13 data-category="Special (Daemon)" data-min=5>Marauder Horsemen</option>
+          <option value=33 data-category="Special (Daemon)" data-min=4>Knights of Chaos</option>
+          <option value=45 data-category="Special (Daemon)" data-min=4>Chosen Knights of Chaos</option>
+          <option value=120 data-category="Special (Daemon)" data-min=1>Chariot of Chaos</option>
+          <option value=6 data-category="Special (Daemon)" data-min=5>Warhounds of Chaos</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=60 data-category="Rare" data-min=1>Spawn of Chaos</option>
+          <option value=0 data-category="Rare" data-min=1>Dogs of War</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    beastForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">          
+          <option value=95 data-category="Lord" data-min=1>Beastlord</option>
+          <option value=180 data-category="Lord" data-min=1>Doombull</option>
+          <option value=180 data-category="Lord" data-min=1>Great Bray-Shaman</option>
+          <option value=60 data-category="Hero" data-min=1>Wargor</option>
+          <option value=75 data-category="Hero" data-min=1>Bray-Shaman</option>
+          <option value=210 data-category="Lord" data-min=1>Lord of Chaos</option>
+          <option value=235 data-category="Lord" data-min=1>Exalted Sorcerer of Chaos</option>
+          <option value=300 data-category="Lord+Hero" data-min=1>Daemon Prince</option>
+          <option value=650 data-category="Lord+Hero+Rare" data-min=1>Bloodthirster</option>
+          <option value=625 data-category="Lord+Hero+Rare" data-min=1>Keeper of Secrets</option>
+          <option value=665 data-category="Lord+Hero+Rare" data-min=1>Lord of Change</option>
+          <option value=600 data-category="Lord+Hero+Rare" data-min=1>Great Unclean One</option>
+          <option value=100 data-category="Hero" data-min=1>Exalted Champion of Chaos</option>
+          <option value=230 data-category="Hero x2" data-min=1>Exalted Daemon</option>
+          <option value=80 data-category="Hero" data-min=1>Aspiring Champion of Chaos</option>
+          <option value=85 data-category="Hero" data-min=1>Sorcerer of Chaos</option>
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=4 data-category="Core (Beast)" data-min=10>Beast Herd</option>
+          <option value=12 data-category="Core (Beast)" data-min=10>Bestigor Herd</option>
+          <option value=85 data-category="Core (Beast)" data-min=1>Tuskgor Chariot</option>
+          <option value=6 data-category="Core (Beast)" data-min=5>Warhounds of Chaos</option>
+          <option value=40 data-category="Core (Doombull)" data-min=3>Minotaurs</option>
+          <option value=14 data-category="Core (Mortal)" data-min=10>Warriors of Chaos</option>
+          <option value=20 data-category="Core (Mortal)" data-min=10>Chosen Warriors of Chaos</option>
+          <option value=5 data-category="Core (Mortal)" data-min=10>Marauders of Chaos</option>
+          <option value=13 data-category="Core (Mortal)" data-min=5>Marauder Horsemen</option>
+          <option value=33 data-category="Core (Mortal)" data-min=4>Knights of Chaos</option>
+          <option value=45 data-category="Core (Mortal)" data-min=4>Chosen Knights of Chaos</option>
+          <option value=120 data-category="Core (Mortal)" data-min=1>Chariot of Chaos</option>
+          <option value=6 data-category="Core (Mortal)" data-min=5>Warhounds of Chaos</option>
+          <option value=16 data-category="Core (Daemon)" data-min=10>Bloodletters</option>
+          <option value=16 data-category="Core (Daemon)" data-min=5>Flesh Hounds of Khorne</option>
+          <option value=16 data-category="Core (Daemon)" data-min=10>Plaguebearers</option>
+          <option value=16 data-category="Core (Daemon)" data-min=1>Nurglings</option>
+          <option value=15 data-category="Core (Daemon)" data-min=10>Daemonettes</option>
+          <option value=15 data-category="Core (Daemon)" data-min=10>Horrors</option>
+          <option value=33 data-category="Core (Daemon)" data-min=3>Screamers of Tzeentch</option>
+          <option value=15 data-category="Core (Daemon)" data-min=10>Chaos Furies</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">                    
+          <option value=55 data-category="Special" data-min=3>Chaos Trolls</option>
+          <option value=35 data-category="Special" data-min=3>Chaos Ogres</option>
+          <option value=35 data-category="Special" data-min=3>Centigor</option>
+          <option value=40 data-category="Special" data-min=3>Minotaurs</option>
+          <option value=4 data-category="Special" data-min=10>Beast Herd</option>
+          <option value=12 data-category="Special" data-min=10>Bestigor Herd</option>
+          <option value=85 data-category="Special" data-min=1>Tuskgor Chariot</option>
+          <option value=6 data-category="Special" data-min=5>Warhounds of Chaos</option>
+          <option value=16 data-category="Special (Mortal)" data-min=10>Bloodletters</option>
+          <option value=16 data-category="Special (Mortal)" data-min=5>Flesh Hounds of Khorne</option>
+          <option value=16 data-category="Special (Mortal)" data-min=10>Plaguebearers</option>
+          <option value=16 data-category="Special (Mortal)" data-min=1>Nurglings</option>
+          <option value=15 data-category="Special (Mortal)" data-min=10>Daemonettes</option>
+          <option value=15 data-category="Special (Mortal)" data-min=10>Horrors</option>
+          <option value=33 data-category="Special (Mortal)" data-min=3>Screamers of Tzeentch</option>
+          <option value=15 data-category="Special (Mortal)" data-min=10>Chaos Furies</option>
+          <option value=14 data-category="Special (Daemon)" data-min=10>Warriors of Chaos</option>
+          <option value=20 data-category="Special (Daemon)" data-min=10>Chosen Warriors of Chaos</option>
+          <option value=5 data-category="Special (Daemon)" data-min=10>Marauders of Chaos</option>
+          <option value=13 data-category="Special (Daemon)" data-min=5>Marauder Horsemen</option>
+          <option value=33 data-category="Special (Daemon)" data-min=4>Knights of Chaos</option>
+          <option value=45 data-category="Special (Daemon)" data-min=4>Chosen Knights of Chaos</option>
+          <option value=120 data-category="Special (Daemon)" data-min=1>Chariot of Chaos</option>
+          <option value=6 data-category="Special (Daemon)" data-min=5>Warhounds of Chaos</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=70 data-category="Rare" data-min=3>Dragon Ogres</option>
+          <option value=295 data-category="Rare+Special" data-min=1>Dragon Ogre Shaggoth</option>
+          <option value=205 data-category="Rare" data-min=1>Chaos Giant</option>
+          <option value=60 data-category="Rare" data-min=1>Spawn of Chaos</option>
+          <option value=0 data-category="Rare" data-min=1>Dogs of War</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    highElfForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">
+          <option value=125 data-category="Lord" data-min=1>Prince</option>
+          <option value=225 data-category="Lord" data-min=1>Archmage</option>
+          <option value=70 data-category="Hero" data-min=1>Commander</option>
+          <option value=95 data-category="Hero" data-min=1>Mage</option>
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=12 data-category="Core" data-min=10>Archers</option>
+          <option value=11 data-category="Core" data-min=10>Spearmen</option>
+          <option value=15 data-category="Core" data-min=10>Lothern Sea Guard</option>
+          <option value=19 data-category="Core" data-min=5>Silver Helms</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">
+          <option value=18 data-category="Special" data-min=5>Ellyrian Reavers</option>
+          <option value=26 data-category="Special" data-min=5>Dragon Princes of Caledor</option>
+          <option value=12 data-category="Special" data-min=10>Swordsmasters of Hoeth</option>
+          <option value=15 data-category="Special" data-min=5>Shadow Warriors</option>
+          <option value=85 data-category="Special" data-min=1>Tiranoc Chariot</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=15 data-category="Rare" data-min=10>Phoenix Guard</option>
+          <option value=13 data-category="Rare" data-min=10>White Lions</option>
+          <option value=100 data-category="Rare" data-min=1>Repeater Bolt Thrower</option>
+          <option value=50 data-category="Rare" data-min=1>Great Eagle</option>
+          <option value=0 data-category="Rare" data-min=1>Dogs of War</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+    woodElfForm = `
+    <div id="savedLists">
+    
+    </div>
+    <form>
+        <label class="label2" for="characters">Chars_:</label>
+
+        <select name="characters" id="characters">
+          <option value=145 data-category="Lord" data-min=1>Wood Elf Highborn</option>
+          <option value=465 data-category="Lord+Hero" data-min=1>Highborn on Forest Dragon</option>
+          <option value=215 data-category="Lord" data-min=1>Spellweaver</option>
+          <option value=325 data-category="Lord+Rare" data-min=1>Treeman Ancient</option>
+          <option value=75 data-category="Hero" data-min=1>Wood Elf Noble</option>
+          <option value=90 data-category="Hero" data-min=1>Spellsinger</option>
+          <option value=65 data-category="Hero" data-min=1>Branchwraith</option>
+        </select>
+        <button id="charButton" type="button" onClick="addUnit('#characters')">add</button>
+    </form>
+
+    <form>
+        <label for="core">Core__:</label>
+
+        <select name="core" id="core">
+          <option value=12 data-category="Core" data-min=10>Glade Guard</option>
+          <option value=24 data-category="Core" data-min=5>Glade Riders</option>
+          <option value=12 data-category="Core" data-min=10>Eternal Guard</option>
+          <option value=12 data-category="Core" data-min=8>Dryads</option>
+        </select>
+        <button id="coreButton" type="button" onClick="addUnit('#core')">add</button>
+    </form>
+
+    <form>
+        <label for="special">Special:</label>
+
+        <select name="special" id="special">
+          <option value=18 data-category="Special" data-min=5>Wardancer Troupe</option>
+          <option value=40 data-category="Special" data-min=3>Warhawk Riders</option>
+          <option value=26 data-category="Special" data-min=5>Wild Riders of Kurnous</option>
+          <option value=65 data-category="Special" data-min=3>Tree Kin</option>
+        </select>
+        <button id="specialButton" type="button" onClick="addUnit('#special')">add</button>
+    </form>
+
+    <form>
+        <label for="rare">Rare__:</label>
+
+        <select name="rare" id="rare">
+          <option value=24 data-category="Rare" data-min=5>Waywatchers</option>
+          <option value=285 data-category="Rare" data-min=1>Treeman</option>
+          <option value=50 data-category="Rare" data-min=1>Great Eagles</option>
+          <option value=0 data-category="Rare" data-min=1>Dogs of War</option>
+        </select>
+        <button id="rareButton" type="button" onClick="addUnit('#rare')">add</button>
+    </form>`;
+
+function loadArmyOptions() {
+   let chosenArmy = $('#army').val(); 
+    switch(chosenArmy) {
+      case "Skaven":
+        switchArmy(skavenForm)
+        break;
+      case "Dwarfs":
+        switchArmy(dwarfForm);
+        break;
+      case "Bretonnia":
+        switchArmy(bretonniaForm);
+        break;
+      case "Vampire Counts":
+        switchArmy(vcForm);
+        break;
+      case "Orcs & Goblins":
+        switchArmy(ogForm);
+        break;
+      case "Empire":
+        switchArmy(empireForm);
+        break;
+      case "Lizardmen":
+        switchArmy(lizardForm);
+        break;
+      case "Dark Elves":
+        switchArmy(darkElfForm);
+        break;
+      case "High Elves":
+        switchArmy(highElfForm);
+        break;
+      case "Wood Elves":
+        switchArmy(woodElfForm);
+        break;
+      case "Tomb Kings":
+        switchArmy(tombKingForm);
+        break;
+      case "Hordes of Chaos":
+        switchArmy(chaosForm);
+        break;
+      case "Beastmen":
+        switchArmy(beastForm);
+        break;
+      case "Ogres":
+        switchArmy(ogresForm);
+        break;
+      default:
+        $('#armyForm').html('');
+    }
+
+    $("#units").html('');
+}
+
+function switchArmy(form) {
+    $('#armyForm').html(form);
+        loadSavedListsSelect();
+}
+
+</script>
+
+<script  charset="utf-8">
+var rowOffset
+(function() {
+  "use strict";
+  
+  const table = document.getElementById('tg-f2S7H');
+  const tbody = table.querySelector('tbody');
+  
+  var currRow = null,
+      dragElem = null,
+      mouseDownX = 0,
+      mouseDownY = 0,         
+      mouseX = 0,
+      mouseY = 0,      
+      mouseDrag = false;  
+  
+  function init() {
+    bindInputs();
+  }
+  
+  function bindInputs() {
+    document.addEventListener('mousedown', startMoveCallback);
+    document.addEventListener('touchstart', startMoveCallback);
+    
+    document.addEventListener('mousemove', moveCallback);
+    document.addEventListener('touchmove', moveCallback);
+    
+    document.addEventListener('mouseup', endMoveCallback);
+    document.addEventListener('touchend', endMoveCallback);
+  }  
+
+  function startMoveCallback(event) {
+      //if(event.button != 0) return true;
+      
+      let target = getTargetRow(event.target);
+      if(target) {
+        currRow = target;
+        addDraggableRow(target);
+        currRow.classList.add('is-dragging');
+        window.addEventListener('selectstart', disableSelect);
+        disableScrolling();
+
+
+        let coords = getMouseCoords(event);
+        mouseDownX = coords.x;
+        mouseDownY = coords.y + rowOffset + target.getBoundingClientRect().height;      
+
+        mouseDrag = true;   
+      }
+    }
+  function endMoveCallback(event) {
+      if(!mouseDrag) return;
+      
+      currRow.classList.remove('is-dragging');
+      table.removeChild(dragElem);
+      window.removeEventListener('selectstart', disableSelect);
+      enableScrolling();
+      
+      dragElem = null;
+      mouseDrag = false;
+  }
+
+  function moveCallback(event) {
+      if(!mouseDrag) return;
+      
+      let coords = getMouseCoords(event);
+      mouseX = coords.x - mouseDownX;
+      mouseY = coords.y - mouseDownY;  
+      
+      moveRow(mouseX, mouseY);
+  }
+  
+  function swapRow(row, index) {
+     let currIndex = Array.from(tbody.children).indexOf(currRow),
+         row1 = currIndex > index ? currRow : row,
+         row2 = currIndex > index ? row : currRow;
+         
+         
+     tbody.insertBefore(row1, row2);
+     updateList()
+  }
+    
+  function moveRow(x, y) {
+    dragElem.style.transform = "translate3d(" + x + "px, " + y + "px, 0)";
+    
+    let	dPos = dragElem.getBoundingClientRect(),
+        currStartY = dPos.y, currEndY = currStartY + dPos.height,
+        rows = getRows();
+
+    for(var i = 0; i < rows.length; i++) {
+      let rowElem = rows[i],
+          rowSize = rowElem.getBoundingClientRect(),
+          rowStartY = rowSize.y, rowEndY = rowStartY + rowSize.height;
+
+      if(currRow !== rowElem && isIntersecting(currStartY, currEndY, rowStartY, rowEndY)) {
+        if(Math.abs(currStartY - rowStartY) < rowSize.height / 2)
+          swapRow(rowElem, i);
+      }
+    }    
+  }
+  
+  function addDraggableRow(target) {    
+      dragElem = target.cloneNode(true);
+      dragElem.classList.add('draggable-table__drag');
+      dragElem.style.height = getStyle(target, 'height');
+      dragElem.style.background = getStyle(target, 'backgroundColor');     
+      for(var i = 0; i < target.children.length; i++) {
+        let oldTD = target.children[i],
+            newTD = dragElem.children[i];
+        newTD.style.width = getStyle(oldTD, 'width');
+        newTD.style.height = getStyle(oldTD, 'height');
+        newTD.style.padding = getStyle(oldTD, 'padding');
+        newTD.style.margin = getStyle(oldTD, 'margin');
+      }      
+      
+      table.appendChild(dragElem);
+
+    
+      let tPos = target.getBoundingClientRect(),
+          dPos = dragElem.getBoundingClientRect();
+      rowOffset = ((dPos.y - tPos.y) - tPos.height);
+      dragElem.style.bottom = ((dPos.y - tPos.y) + tPos.height) + "px";
+      dragElem.style.left = "-1px";    
+    
+      document.dispatchEvent(new MouseEvent('mousemove',
+        { view: window, cancelable: true, bubbles: true }
+      ));    
+  }  
+  
+  function getRows() {
+    return table.querySelectorAll('tbody tr');
+  }    
+  
+  function getTargetRow(target) {
+      let elemName = target.tagName.toLowerCase();
+
+      if(elemName == 'tr') return target;
+      if(elemName == 'td') return target.closest('tr');     
+  }
+  
+  function getMouseCoords(event) {
+      if(event.type.includes('touch')) {
+        return {
+            x:event.changedTouches[0].clientX,
+            y:event.changedTouches[0].clientY
+        };
+      }
+    return {
+        x: event.clientX,
+        y: event.clientY
+    };    
+  }  
+  
+  function getStyle(target, styleName) {
+    let compStyle = getComputedStyle(target),
+        style = compStyle[styleName];
+
+    return style ? style : null;
+  }  
+  
+  function isIntersecting(min0, max0, min1, max1) {
+      return Math.max(min0, max0) >= Math.min(min1, max1) &&
+             Math.min(min0, max0) <= Math.max(min1, max1);
+  }  
+  function disableSelect(event) {
+    event.preventDefault();
+  }
+
+  function disableScrolling() {
+    // To get the scroll position of current webpage
+    let topScroll = window.pageYOffset || document.documentElement.scrollTop;
+    let leftScroll = window.pageXOffset || document.documentElement.scrollLeft;
+
+    // if scroll happens, set it to the previous value
+    window.onscroll = function() {window.scrollTo(leftScroll, topScroll)};
+  }
+
+  function enableScrolling() {
+     window.onscroll = function() {};
+  }
+
+init();})();
+</script>
+</body>
+</html>
