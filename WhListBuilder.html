@@ -257,6 +257,7 @@ tr:nth-child(odd) {
         let amount = $(selection + ' option:selected').data("min")
         let basePrice = $(selection + ' option:selected').val()
         addTableRow(name, category, amount, basePrice, 0, 0, "")
+        sortTable();
     }
 
     function addTableRow(name, category, amount, basePrice, ppm, ppu, notes) {
@@ -276,7 +277,7 @@ tr:nth-child(odd) {
         calculateRowTotal('#' + uuid)   
     }
 
-    function saveList() {
+    function getTableData() {
       let table = document.getElementById("tg-f2S7H");
       let data = [];
       for (let i = 1, row; row = table.rows[i]; i++) {
@@ -291,14 +292,17 @@ tr:nth-child(odd) {
         rowData["Total"] = row.cells[7].innerHTML;
         data.push(rowData);
       }
+      return data
+    }
 
+    function saveList() {
       let listname = $('#listname').val()
       if(listname === '') {
         alert("List name required to save")
       }else {
-        localStorage.setItem($('#army').val() + listname, JSON.stringify(data));
-      }
-      loadSavedListsSelect()
+        localStorage.setItem($('#army').val() + listname, JSON.stringify(getTableData()));
+        loadSavedListsSelect()
+      }      
     }
 
     function loadSavedListsSelect() {
@@ -373,6 +377,50 @@ tr:nth-child(odd) {
 
       $('#diff').text(Math.abs(parseInt($('#YourVps').val() - total)))
     }
+
+    function categorySortOrder(category) {
+        if(category.includes("Lord")) {
+                return 1;
+        }
+        if(category.includes("Hero")) {
+            return 2;
+        }
+        if(category.includes("Rare")) {
+            return 5;
+        }
+        if(category.includes("Special")) {
+            return 4;
+        }
+        if(category.includes("Core")) {
+            return 3;
+        }        
+        
+        return 6;
+    }
+    function sortTable() {
+        let data = getTableData();
+        data.sort(function(a, b) {
+          let keyA = categorySortOrder(a["Category"]),
+            keyB = categorySortOrder(b["Category"]);
+          if (keyA < keyB) return -1;
+          if (keyA > keyB) return 1;
+          let keyTotalA = a["BasePrice"],
+            keyTotalB = b["BasePrice"];
+          if (keyTotalA < keyTotalB) return -1;
+          if (keyTotalA > keyTotalB) return 1;
+          let keyNameA = a["Unit"],
+            keyNameB = b["Unit"];
+          if (keyNameA < keyNameB) return -1;
+          if (keyNameA > keyNameB) return 1;
+          return 0;
+        });
+        $("#units").html('');
+        for (var i=0; i<data.length; i++) {
+            let row = data[i];
+            addTableRow(row.Unit, row.Category, row.Amount, row.BasePrice, row.PPM, row.PPU, row.Notes)
+        }           
+    }
+
 </script>
 <script  charset="utf-8">
     skavenForm = `
@@ -1118,7 +1166,7 @@ tr:nth-child(odd) {
         <select name="special" id="special">                    
           <option value=55 data-category="Special" data-min=3>Chaos Trolls</option>
           <option value=35 data-category="Special" data-min=3>Chaos Ogres</option>
-          <option value=35 data-category="Special" data-min=3>Centigor</option>
+          <option value=17 data-category="Special" data-min=5>Centigor</option>
           <option value=40 data-category="Special" data-min=3>Minotaurs</option>
           <option value=4 data-category="Special" data-min=10>Beast Herd</option>
           <option value=12 data-category="Special" data-min=10>Bestigor Herd</option>
@@ -1347,14 +1395,12 @@ var rowOffset
   
   function bindInputs() {
     document.addEventListener('mousedown', startMoveCallback);
-    document.addEventListener('touchstart', startMoveCallback);
     
     document.addEventListener('mousemove', moveCallback);
-    document.addEventListener('touchmove', moveCallback);
     
     document.addEventListener('mouseup', endMoveCallback);
-    document.addEventListener('touchend', endMoveCallback);
   }  
+    
 
   function startMoveCallback(event) {
       //if(event.button != 0) return true;
