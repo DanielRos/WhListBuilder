@@ -70,6 +70,9 @@ div {margin-top:10px;margin-bottom:10px;}
   font-weight:normal;overflow:hidden;padding:4px 5px;word-break:normal; cursor:grabbing;text-align: center; vertical-align: middle; pointer-events: auto !important;}
 .tg-wrap {margin-top:15px;}
 
+.vplabel {width:240px; font-size:13px;}
+.vpinput {width:60px; font-size:12px; height:20px;}
+
 tr:nth-child(even) {
         background-color: #f7f0f7b8;
     }
@@ -129,7 +132,7 @@ tr:nth-child(odd) {
     <table id="tg-f2S7H" class="tg draggable-table">
     <thead>
       <tr>
-        <th width="20%">Unit</th>
+        <th width="15%">Unit</th>
         <th>Category</th>
         <th>Amount</th>
         <th>Points</th>
@@ -137,6 +140,7 @@ tr:nth-child(odd) {
         <th with="40px">PPU</th>
         <th width="50%">Notes</th>
         <th>Total</th>
+        <th width="10%">VP (1,1/2,0)</th>
         <th>Delete</th>
       </tr>
     </thead>
@@ -155,6 +159,17 @@ tr:nth-child(odd) {
     </div>
 
 <ul id="list"></ul>
+
+<h2>Victory Points Calculation</h2>
+    <form style="margin-bottom:100px;">
+        <div>
+            <label class="vplabel" for="additionalVps">Input additional VPs gained by opponent:</label>    
+            <input id="additionalVps" class="vpinput" type="number" onChange="calculateVps()" value=0 />
+        </div>
+        <p>Opponent gained <span id="vpTotal">0</span> VPs in total</p>
+        <p>You gained <input id="YourVps" class="vpinput" type="number" onChange="calculateVps()" value=0 /> resulting in a difference of <span id="diff">0</span> pts</p>
+    </form>
+
 <script charset="utf-8">
     
 
@@ -255,6 +270,7 @@ tr:nth-child(odd) {
             .append($('<td class="tg-0lax">').append('<input type="number" value="'+ ppu +'" style="width: 40px;" onChange="calculateRowTotal(\'#' + uuid+ '\')"/>'))
             .append($('<td class="tg-0lax">').append($('<textarea class="notes"/>').val(notes)))
             .append($('<td class="tg-0lax">').append(0))
+            .append($('<td class="tg-0lax">').append('<input name="'+ uuid + '" value="1" type="radio" onChange="calculateVps()"/> <input name="'+ uuid + '" value="0.5" type="radio" onChange="calculateVps()"/>  <input name="'+ uuid + '" value="0" type="radio" checked="true" onChange="calculateVps()"/>'))
             .append($('<td class="tg-0lax">').append('<button class="deleteButton" type="button" onClick="$(\'#' + uuid +'\').remove();calcualteTotal();"/>'))
         )
         calculateRowTotal('#' + uuid)   
@@ -342,6 +358,20 @@ tr:nth-child(odd) {
             }
             return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
         });
+    }
+
+    function calculateVps() {
+      let table = document.getElementById("tg-f2S7H");
+      let total = 0
+      for (let i = 1, row; row = table.rows[i]; i++) {                 
+        rowTotal = row.cells[7].innerHTML;
+        vps = parseFloat(row.cells[8].querySelector("input:checked").value) * rowTotal;
+        total += vps
+      }
+      total += parseInt($('#additionalVps').val())
+      $('#vpTotal').text(total)
+
+      $('#diff').text(Math.abs(parseInt($('#YourVps').val() - total)))
     }
 </script>
 <script  charset="utf-8">
